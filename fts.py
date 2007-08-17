@@ -14,7 +14,8 @@ import re
 from zipfile import ZipFile, ZIP_DEFLATED
 
 
-__version__ = '$Revision:$'
+# $Id: fts.py 75 2007-01-30 14:31:51Z eric $
+__version__ = '$Revision: 75 $'
 
 
 MAX_WORD_LEN = 30
