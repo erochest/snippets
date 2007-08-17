@@ -16,6 +16,7 @@ usage: win32named.py [client|server]
 
 
 from ctypes import *
+import sys
 
 
 GENERIC_READ = 0x80000000
