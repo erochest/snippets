@@ -6,38 +6,71 @@
 
 ;;; General DAG functions
 
-;; A DAG is a hash-map, with each node pointing to a list of  nodes.
+;; A DAG is a hash-map of dag-node structs. Each dag-node has an ID number (its
+;; index in the DAG vector), a data payload, and a hash-map of edges, mapping
+;; the edge nodes' IDs to their weightings.
+
+(defstruct dag-node :id :data :edges)
+(defstruct dag-edge :src :dest :weight)
 
 (defn add-edges
-  "This adds the edges -- pairs of nodes -- to the graph:
-    (add-edges dag :a :b :a :c :b :c)"
+  "This adds the edges -- vector pairs of a source node, a destination node,
+  and a weighting -- to the graph:
+  (add-edges dag :a :b 1.0, :a :c 1.0, :b :c 0.5)"
   ([dag]
    dag)
-  ([dag src dest]
-   (assoc dag src (conj (get dag src) dest)))
-  ([dag src dest & edges]
-   (let [dag-2 (apply add-edges dag edges)]
-     (assoc dag-2 src (conj (get dag-2 src) dest)))))
+  ([dag src dest weight]
+   (let [src-node (get dag src)
+         edges (assoc (:edges src-node) dest weight)]
+     (assoc dag src (if src-node
+                      (assoc src-node :edges edges)
+                      (struct dag-node src nil edges)))))
+  ([dag src dest weight & edges]
+   (add-edges (apply add-edges dag edges) src dest weight)))
 
 (defn make-graph
   "This creates a graph, building it from pairs of node identifiers."
   ([]
    {})
   ([& edges]
-   (apply add-edges {} edges)))
+   (apply add-edges (make-graph) edges)))
 
 (defn get-edges
   "This returns the edges from a given node."
   [dag node]
-  (get dag node))
+  (-> dag (get node) :edges keys))
+
+(defn get-edge-weight
+  "This returns the weighting for a given edge. If the edge doesn't exist, it
+  returns 0.0."
+  [dag src dest]
+  (-> dag (get src) :edges (get dest 0.0)))
+
+(defn get-data
+  "This returns the data payload for the node."
+  [dag node]
+  (-> dag (get node) :data))
 
 (defn print-dag
   "This prints the DAG to *out*."
   [dag]
-  (loop [nodes (sort (keys dag))]
-    (when nodes
-      (println (first nodes) '=> (get-edges dag (first nodes)))
-      (recur (rest nodes)))))
+  (let [
+        print-edges (fn print-edges [dests edges]
+                      (when dests
+                        (let [dest (first dests)
+                              weight (get edges dest)]
+                          (println (str "    => " dest " (" weight ")"))
+                          (recur (rest dests) edges))))
+        ]
+    (loop [nodes (sort (keys dag))]
+      (when nodes
+        (let [node (get dag (first nodes))]
+          (print (:id node))
+          (when-let data (:data node)
+            (print '/ data))
+          (println)
+          (print-edges (sort (keys (:edges node))) (:edges node))
+          (recur (rest nodes)))))))
 
 (defn- vector-contains?
   "This returns the index of the item in the vector, or false if it is not
@@ -91,7 +124,7 @@
        (let [[node & path :as next-path] (first q)]
          (println "searching" next-path) (flush)
          (cond (seen node) (recur (rest q) seen)
-               (pred node) (reverse next-path)
+               (pred (get dag node)) (reverse next-path)
                :else (recur (concat (rest q)
                                     (map #(cons % next-path)
                                          (filter (complement seen) (get-edges dag node))))
