@@ -133,6 +133,49 @@
 ;;; Dijkstra's Algorithm
 ;;; http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 
+(defn dijkstra
+  "This is a probably-naive implementation of Dijkstra's algorithm in Clojure.
+  It returns a vector of two items. The first is a mapping of nodes to their
+  shortest distance to the start, and the second is a mapping of nodes to their
+  immediate parent in the shortest path."
+  ([dag]
+   (dijkstra dag (get-root dag)))
+  ([dag start]
+   (dijkstra dag start nil))
+  ([dag start end]
+   (let [get-next (fn get-next
+                    "Return the node closest to the start that has not been
+                    processed yet."
+                    [seen dist]
+                    (when-let unseen (filter (complement seen) (keys dist))
+                      (reduce (partial min-key (partial get dist)) unseen)))]
+     ; 1. Create a distance list, a previous vertex list, and a current vertex
+     ; 2. All the values in the distance list are set to infinity except the starting
+     ;    vertex which is set to zero
+     ; 3. All values in visited list are set to false
+     ; 4. All values in the previous list are set to a special value signifying that they
+     ;    are undefined, such as null
+     (loop [dist (assoc (zipmap (keys dag) (cycle (list (. Integer MAX_VALUE)))) start 0)
+            previous {}
+            seen #{}]
+       ; 5. Current vertex is set as the starting vertex
+       ; 8. Update the current vertex to the unvisited vertex that can be reached by
+       ;    the shortest path from the starting vertex
+       ; 9. Repeat from step 6 until all nodes are visited
+       ; 6. Mark the current vertex as visisted
+       (let [next (get-next seen dist)]
+         (cond (and next (= next end)) [dist previous]
+               next
+               (let [next-dist (get dist next)
+                     seen+next (conj seen next)
+                     edges (filter (complement (comp seen+next key)) (-> dag (get next) :edges))]
+                 ; 7. Update distance and previous lists based on those vertices which can be
+                 ;    immediately reached from the current vertex
+                 (recur (reduce (fn [m e] (assoc m (key e) (+ (val e) next-dist))) dist edges)
+                        (reduce (fn [m e] (assoc m (key e) next)) previous edges)
+                        seen+next))
+               :else [dist previous]))))))
+
 ;;; A*
 ;;; http://en.wikipedia.org/wiki/A%2A_search_algorithm
 
