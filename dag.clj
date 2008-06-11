@@ -110,6 +110,19 @@
   [dag]
   (first (reverse (sort-graph dag))))
 
+;; The shortest path from :s to :v is (:s :x :u :v), length 9.
+
+(def test-dag (make-graph :s :u 10,
+                          :s :x 5,
+                          :u :v 1,
+                          :u :x 2,
+                          :v :y 4,
+                          :x :u 3,
+                          :x :v 9,
+                          :x :y 2,
+                          :y :s 7,
+                          :y :v 6))
+
 ;;; Breadth first search
 ;;; http://en.wikipedia.org/wiki/Breadth-first_search
 
@@ -144,8 +157,8 @@
    (dijkstra dag start nil))
   ([dag start end]
    (let [get-next (fn get-next
-                    "Return the node closest to the start that has not been
-                    processed yet."
+                    ; Return the node closest to the start that has not been
+                    ; processed yet.
                     [seen dist]
                     (when-let unseen (filter (complement seen) (keys dist))
                       (reduce (partial min-key (partial get dist)) unseen)))]
@@ -178,6 +191,26 @@
 
 ;;; A*
 ;;; http://en.wikipedia.org/wiki/A%2A_search_algorithm
+
+(defn a*
+  "This is an implementation of the A* search algorithm in Clojure. It operates
+  on the DAGs defined above. For this implementation, the estimated cost of the
+  path from the current to the end is assumed to be the cost of the edge. This
+  is obviously bogus."
+  ([dag end]
+   (a* dag (get-root dag) end))
+  ([dag start end]
+   (loop [q (list [(list start) 0.0]), closed #{}]
+     (if q
+       (let [sorted-q (sort-by second (comparator <) q)
+             [path cost :as p] (first sorted-q)
+             x (first path)]
+         (cond (closed x) (recur (rest sorted-q) closed)
+               (= x end) (assoc p 0 (reverse path))
+               :else (recur (concat (rest sorted-q) (map (fn [[n c]] [(cons n path) (+ cost c)])
+                                                         (-> dag (get x) :edges)))
+                            (conj closed x))))
+       nil))))
 
 ;;; Bellman-Ford
 ;;; http://en.wikipedia.org/wiki/Bellman-Ford_algorithm
