@@ -11,7 +11,6 @@
 ;; the edge nodes' IDs to their weightings.
 
 (defstruct dag-node :id :data :edges)
-(defstruct dag-edge :src :dest :weight)
 
 (defn add-edges
   "This adds the edges -- vector pairs of a source node, a destination node,
@@ -196,7 +195,8 @@
   "This is an implementation of the A* search algorithm in Clojure. It operates
   on the DAGs defined above. For this implementation, the estimated cost of the
   path from the current to the end is assumed to be the cost of the edge. This
-  is obviously bogus."
+  is obviously bogus. Dijkstra's is a special case of A*, where h(x) = 0
+  (i.e., where the heuristic, estimated cost is always zero.)"
   ([dag end]
    (a* dag (get-root dag) end))
   ([dag start end]
@@ -214,4 +214,24 @@
 
 ;;; Bellman-Ford
 ;;; http://en.wikipedia.org/wiki/Bellman-Ford_algorithm
+
+(defn bellman-ford
+  "This does the same as Dijkstra's algorithm, and it takes longer, but it will
+  handle negative weights."
+  ([dag end]
+   (bellman-ford dag (get-root dag) end))
+  ([dag start end]
+   (let [dag-seq (seq dag)
+         working (zipmap (map first dag-seq)
+                         (map (fn [[id n]]
+                                (assoc n :distance (if (= id start)
+                                                     0
+                                                     (. Integer MAX_VALUE))))
+                              dag-seq))]
+     (loop [n 0]
+       (if (< n (dec (count dag)))
+         ; step 2: relax edges repeatedly
+         nil
+         ; step 3: now check for negative-weight cycles
+
 
