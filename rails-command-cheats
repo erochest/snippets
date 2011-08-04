@@ -1,0 +1,24 @@
+rails new <project-name> -T
+
+bundle install --binstubs
+
+## fields below are <name>:<type>
+rails generate rspec:install
+rails generate integration_test <label>				# -> spec/requests/<label>_spec.rb
+rails generate controller <models> <subpage-1> <subpage-2> ... && rm -rf spec/{views,helpers}
+rails generate model <model> <field-1> <field-2> ...
+rails generate migration <name>					# empty migration
+rails generate migration add_<name>_to_<models> <field>		# add field to table
+
+./bin/rake db:reset
+./bin/rake db:migrate && ./bin/rake db:test:prepare
+./bin/rake db:rollback
+
+./bin/rspec spec/
+
+./bin/annotate --position before
+
+rails console [--sandbox]
+rails server
+
+<%= debug(params) if Rails.env.development? %>
