@@ -1,0 +1,11 @@
+
+These are sample bugs. They could be useful for job interviews, for example:
+
+```javascript
+// an accidental infinite loop, because alldivs is a live view of the divs.
+var alldivs = document.getElementsByTagName('div');
+for (var i = 0; i < alldivs.length; i++) {
+    document.body.appendChild(document.createElement('div'))
+}
+```
+
