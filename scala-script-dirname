@@ -1,0 +1,16 @@
+#!/bin/sh
+SCRIPT="$(cd "${0%/*}" 2> /dev/null; echo "$PWD"/"${0##*/}")"
+DIR=`dirname "${SCRIPT}"}`
+exec scala $0 $DIR $SCRIPT
+::!#
+
+import java.io.File
+
+object App {
+    def main(args: Array[String]): Unit = {
+        val directory = new File(args.head).getAbsolutePath
+        val script = new File(args.last).getAbsolutePath
+        println("Execute '%s' in directory '%s'.".format(script, directory))
+    }
+}
+
